@@ -58,12 +58,12 @@ def test_manhattan_fun():
     print('Testing Manhattan Distance')
 
     # Correct Manhattan distances for the initial states of the provided problem set
-    correct_man_dist = [4, 8, 8, 3, 3, 11, 7, 11, 10, 12, 12, 13, 10, 13, 10, 35, 28, 41, 43, 36]
+    correct_man_dist = [4, 8, 8, 3, 3, 11, 7, 11, 10, 12, 12, 13, 10, 13, 10, 35, 28, 41, 43, 36, 2, 2]
 
     solved = 0;
     unsolved = [];
 
-    for i in range(0, 20):
+    for i in range(0, len(PROBLEMS)):
         # print("PROBLEM {}".format(i))
 
         s0 = PROBLEMS[i]
@@ -72,14 +72,13 @@ def test_manhattan_fun():
         print('calculated man_dist:', str(man_dist))
         # To see state
         # print(s0.state_string())
-
         if man_dist == correct_man_dist[i]:
             solved += 1
         else:
             unsolved.append(i)
 
     print("*************************************")
-    print("In the problem set provided, you calculated the correct Manhattan distance for {} states out of 20.".format(
+    print("In the problem set provided, you calculated the correct Manhattan distance for {} states out of 22.".format(
         solved))
     print("States that were incorrect: {}".format(unsolved))
     print("*************************************\n")
@@ -93,15 +92,16 @@ def test_alternate_fun():
 
     solved = 0;
     unsolved = [];
-    benchmark1 = 7;
-    benchmark2 = 14;
+    benchmark1 = 9;
+    benchmark2 = 16;
     timebound = 2  # time limit
 
     #for reference, solution lengths are here
-    man_dist_solns = [29, 24, 23, 24, 12, -99, -99, 41, 20, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99]
-    better_solns = [-99, 24, 23, 20, 12, -99, -99, 41, 20, -99, 73, 52, 64, 39, 40, 160, 139, -99, -99, 207]
+    man_dist_solns = [29, 24, 23, 24, 12, -99, -99, 41, 20, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, 30, 21]
+    better_solns = [-99, 24, 23, 20, 12, -99, -99, 41, 20, -99, 73, 52, 64, 39, 40, 160, 139, -99, -99, 207, 30, 19]
 
     for i in range(0, len(PROBLEMS)):
+    # for i in range(5, 6):
 
         print("*************************************")
         print("PROBLEM {}".format(i))
@@ -160,9 +160,10 @@ def test_fval_function_fun():
 
 def test_iterative_gbfs_fun():
 
-    man_dist_solns = [20, 19, 21, 20, 8, -99, -99, 41, 15, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99]
-    len_benchmark = [-99, 19, 21, 20, 9, -99, -99, 41, 15, -99, 73, 49, 62, 39, 38, 160, 139, -99, -99, 207]
-
+    man_dist_solns = [20, 19, 21, 20, 8, -99, -99, 41, 15, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, 30, 19]
+    len_benchmark = [-99, 19, 21, 20, 9, -99, -99, 41, 15, -99, 73, 49, 62, 39, 38, 160, 139, -99, -99, 207, 30, 19]
+    
+    
     ##############################################################
     # TEST iterative GBFS
     print('Testing iterative GBFS')
@@ -193,15 +194,15 @@ def test_iterative_gbfs_fun():
     print("Of the {} problems that were solved, the cost of {} matched or outperformed the benchmark.".format(solved,
                                                                                                               benchmark))
     print("Problems that remain unsolved in the set are Problems: {}".format(unsolved))
-    print("The manhattan distance implementation solved 7 out of the 20 practice problems given 2 seconds.")
-    print("The better implementation solved 14 out of the 20 practice problems given 2 seconds.")
+    print("The manhattan distance implementation solved 9 out of the 22 practice problems given 2 seconds.")
+    print("The better implementation solved 16 out of the 22 practice problems given 2 seconds.")
     print("*************************************\n")
 
 def test_iterative_astar_fun():
 
-    man_dist_solns = [17, 18, 21, 10, 8, -99, -99, 41, 14, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99]
-    len_benchmark = [-99, 18, 21, 10, 8, -99, -99, 41, 14, -99, 36, 30, 28, 31, 27, -99, -99, -99, -99, -99]
-
+    man_dist_solns = [17, 18, 21, 10, 8, -99, -99, 41, 14, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, -99, 30, 19]
+    len_benchmark = [-99, 18, 21, 10, 8, -99, -99, 41, 14, -99, 36, 30, 28, 27, 27, -99, -99, -99, -99, -99, 30, 19]
+    
 
     ##############################################################
     # TEST iterative WEIGHTED A STAR
@@ -233,8 +234,8 @@ def test_iterative_astar_fun():
     print("Of the {} problems that were solved, the cost of {} matched or outperformed the benchmark.".format(solved,
                                                                                                               benchmark))
     print("Problems that remain unsolved in the set are Problems: {}".format(unsolved))
-    print("The manhattan distance implementation solved 7 out of the 20 practice problems given 2 seconds.")
-    print("The better implementation solved 11 out of the 20 practice problems given 2 seconds.")
+    print("The manhattan distance implementation solved 9 out of the 22 practice problems given 2 seconds.")
+    print("The better implementation solved 13 out of the 22 practice problems given 2 seconds.")
     print("*************************************\n")
     ##############################################################
 
@@ -301,5 +302,4 @@ def test_all():
     if test_weighted_astar: test_weighted_astar_fun()
 
 if __name__=='__main__':
-    # test_all()
-    test_weighted_astar_fun()
+    test_all()
