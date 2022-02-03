@@ -49,6 +49,30 @@ def trivial_heuristic(state):
     '''OUTPUT: a numeric value that serves as an estimate of the distance of the state (# of moves required to get) to the goal.'''
     return 0  # CHANGE THIS
 
+def corner_deadlock(state, box):
+  ''' Checks if box is corner_deadlock, BUT NOT AT GOAL STATE!!, using both the dimensions of map and the obstacles '''
+
+  if box in state.storage: return False
+
+  up_block = (box[1] == 0) or ((box[0], box[1] + 1) in state.obstacles) 
+  down_block = (box[1] == state.height - 1) or ((box[0], box[1] - 1) in state.obstacles) 
+
+  left_block = (box[0] == 0) or ((box[0] - 1, box[1]) in state.obstacles)
+  right_block = (box[0] == state.width - 1) or ((box[0] + 1, box[1]) in state.obstacles)
+
+  return (up_block or down_block) and (left_block or right_block)
+
+def edge_deadlock(state, box):
+  ''' Checks if there is a deadlock due to map walls on a box and a possible storage point '''
+  if box in state.storage: return False
+  # Check if box is either at the leftmost or rightmost wall, and check if storage is not along that wall
+  if ((box[0] == 0) or (box[0] == state.width - 1)) and (box[0] not in [space[0] for space in state.storage]):
+      return True
+  # Check if box is either at the topmost or bottommost wall, and check if storage is not along that wall
+  elif ((box[1] == state.height - 1) or (box[1] == 0)) and (box[1] not in [space[1] for space in state.storage]):
+      return True
+  return False
+
 def heur_alternate(state):
     # IMPLEMENT
     '''a better heuristic'''
@@ -59,47 +83,48 @@ def heur_alternate(state):
     # Your function should return a numeric value for the estimate of the distance to the goal.
 
     # Heuristic description: exact same as manhattan distance from above, but now, only one box can occupy a single storage location.
-    # storage_spaces = [space for space in state.storage]
-    # sum = 0
-    # for box in state.boxes:
-    #   # if corner_deadlock(state, box): return math.inf
-    #   man_dist = math.inf
-    #   man_space = (0,0)
-    #   for space in storage_spaces:
-    #     # if edge_deadlock(state, box, space): return math.inf
-    #     temp_dist = abs(box[0] - space[0]) + abs(box[1] - space[1])
-    #     if temp_dist < man_dist:
-    #       man_dist = temp_dist
-    #       man_space = space
-    #   index = storage_spaces.index(man_space)
-    #   storage_spaces.pop(index)
-    #   sum += man_dist
-    # return sum  # CHANGE THIS
+    storage_spaces = [space for space in state.storage]
+    sum = 0
+    for box in state.boxes:
+      if corner_deadlock(state, box): return math.inf
+      if edge_deadlock(state, box): return math.inf
+      man_dist = math.inf
+      man_space = (0,0)
+      for space in storage_spaces:
+        # if edge_deadlock(state, box, space): return math.inf
+        temp_dist = abs(box[0] - space[0]) + abs(box[1] - space[1])
+        if temp_dist < man_dist:
+          man_dist = temp_dist
+          man_space = space
+      index = storage_spaces.index(man_space)
+      storage_spaces.pop(index)
+      sum += man_dist
+    return sum  # CHANGE THIS
 
     # base recursive case
-    if not len(state.boxes): return 0
+    # if not len(state.boxes): return 0
 
-    storage_spaces = [space for space in state.storage]
-    boxes = [box for box in state.boxes]
-    box = boxes[0]
+    # storage_spaces = [space for space in state.storage]
+    # boxes = [box for box in state.boxes]
+    # box = boxes[0]
 
-    man_dist = math.inf
-    man_space = None
-    for storage in state.storage:
-      temp_dist = abs(box[0] - storage[0]) + abs(box[1] - storage[1])
-      if temp_dist < man_dist:
-        man_dist = temp_dist
-        man_space = storage
+    # man_dist = math.inf
+    # man_space = None
+    # for storage in state.storage:
+    #   temp_dist = abs(box[0] - storage[0]) + abs(box[1] - storage[1])
+    #   if temp_dist < man_dist:
+    #     man_dist = temp_dist
+    #     man_space = storage
 
-    new_boxes = boxes.copy()
-    new_storage = storage_spaces.copy()
-    new_state = state
-    new_boxes.remove(box)
-    new_storage.remove(man_space)
-    new_state.boxes = frozenset(new_boxes)
-    new_state.storage = frozenset(new_storage)
+    # new_boxes = boxes.copy()
+    # new_storage = storage_spaces.copy()
+    # new_state = state
+    # new_boxes.remove(box)
+    # new_storage.remove(man_space)
+    # new_state.boxes = frozenset(new_boxes)
+    # new_state.storage = frozenset(new_storage)
 
-    return man_dist + heur_alternate(new_state)
+    # return man_dist + heur_alternate(new_state)
 
 def heur_zero(state):
     '''Zero Heuristic can be used to make A* search perform uniform cost search'''
@@ -162,7 +187,7 @@ def iterative_gbfs(initial_state, heur_fn, timebound=5):  # only use h(n)
     start_time = time.time()
     curr_best = math.inf
     best_final, best_stats = None, None
-    while ((time.time() - start_time) < timebound):
+    while ((time.time() - start_time) < timebound - 0.1):
       se = SearchEngine('best_first', 'full')
       se.init_search(initial_state, goal_fn=sokoban_goal_state, heur_fn=heur_fn)
       final, stats = se.search(timebound - (time.time() - start_time), (curr_best, math.inf, math.inf))
