@@ -8,8 +8,10 @@
 
 from json.encoder import INFINITY
 import os  # for time functions
+import time
 import math  # for infinity
 import heapq
+from tracemalloc import start
 from search import *  # for search engines
 from sokoban import SokobanState, Direction, PROBLEMS  # for Sokoban specific classes and problems
 
@@ -59,20 +61,47 @@ def heur_alternate(state):
     # Your function should return a numeric value for the estimate of the distance to the goal.
 
     # Heuristic description: exact same as manhattan distance from above, but now, only one box can occupy a single storage location.
+    # storage_spaces = [space for space in state.storage]
+    # sum = 0
+    # for box in state.boxes:
+    #   # if corner_deadlock(state, box): return math.inf
+    #   man_dist = math.inf
+    #   man_space = (0,0)
+    #   for space in storage_spaces:
+    #     # if edge_deadlock(state, box, space): return math.inf
+    #     temp_dist = abs(box[0] - space[0]) + abs(box[1] - space[1])
+    #     if temp_dist < man_dist:
+    #       man_dist = temp_dist
+    #       man_space = space
+    #   index = storage_spaces.index(man_space)
+    #   storage_spaces.pop(index)
+    #   sum += man_dist
+    # return sum  # CHANGE THIS
+
+    # base recursive case
+    if not len(state.boxes): return 0
+
     storage_spaces = [space for space in state.storage]
-    sum = 0
-    for box in state.boxes:
-      man_dist = math.inf
-      man_space = (0,0)
-      for space in storage_spaces:
-        temp_dist = abs(box[0] - space[0]) + abs(box[1] - space[1])
-        if temp_dist < man_dist:
-          man_dist = temp_dist
-          man_space = space
-      index = storage_spaces.index(man_space)
-      storage_spaces.pop(index)
-      sum += man_dist
-    return sum  # CHANGE THIS
+    boxes = [box for box in state.boxes]
+    box = boxes[0]
+
+    man_dist = math.inf
+    man_space = None
+    for storage in state.storage:
+      temp_dist = abs(box[0] - storage[0]) + abs(box[1] - storage[1])
+      if temp_dist < man_dist:
+        man_dist = temp_dist
+        man_space = storage
+
+    new_boxes = boxes.copy()
+    new_storage = storage_spaces.copy()
+    new_state = state
+    new_boxes.remove(box)
+    new_storage.remove(man_space)
+    new_state.boxes = frozenset(new_boxes)
+    new_state.storage = frozenset(new_storage)
+
+    return man_dist + heur_alternate(new_state)
 
 def heur_zero(state):
     '''Zero Heuristic can be used to make A* search perform uniform cost search'''
@@ -109,7 +138,21 @@ def iterative_astar(initial_state, heur_fn, weight=1, timebound=5):  # uses f(n)
     '''OUTPUT: A goal state (if a goal is found), else False as well as a SearchStats object'''
     '''implementation of realtime astar algorithm'''
 
-    return None, None #CHANGE THIS
+    # weight will halve by // 2 at ever iteration
+    start_time = time.time()
+    curr_best = math.inf
+    best_final, best_stats = None, None
+    while (weight > 0):
+      se = SearchEngine('custom', 'full')
+      wrapped_fval_function = (lambda sN: fval_function(sN, weight))
+      se.init_search(initial_state, goal_fn=sokoban_goal_state, heur_fn=heur_fn, fval_function=wrapped_fval_function)
+      final, stats = se.search(timebound - (time.time() - start_time), (math.inf, math.inf, curr_best))
+      if final:
+        best_final = final
+        best_stats = stats
+        curr_best = final.gval if final.gval < curr_best else curr_best
+      weight //= 2
+    return best_final, best_stats #CHANGE THIS
 
 def iterative_gbfs(initial_state, heur_fn, timebound=5):  # only use h(n)
     # IMPLEMENT
@@ -118,7 +161,17 @@ def iterative_gbfs(initial_state, heur_fn, timebound=5):  # only use h(n)
     '''OUTPUT: A goal state (if a goal is found), else False'''
     '''implementation of weighted astar algorithm'''
 
-    return None, None #CHANGE THIS
-
-
-
+    start_time = time.time()
+    curr_best = math.inf
+    best_final, best_stats = None, None
+    while ((time.time() - start_time) < timebound):
+      se = SearchEngine('best_first', 'full')
+      se.init_search(initial_state, goal_fn=sokoban_goal_state, heur_fn=heur_fn)
+      final, stats = se.search(timebound - (time.time() - start_time), (curr_best, math.inf, math.inf))
+      if final:
+        best_final = final
+        best_stats = stats
+        curr_best = final.gval if final.gval < curr_best else curr_best
+      if (stats.states_expanded == (stats.states_generated - stats.states_pruned_cycles - stats.states_pruned_cost)):
+        return best_final, best_stats
+    return best_final, best_stats #CHANGE THIS
