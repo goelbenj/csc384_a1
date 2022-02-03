@@ -10,8 +10,6 @@ from json.encoder import INFINITY
 import os  # for time functions
 import time
 import math  # for infinity
-import heapq
-from tracemalloc import start
 from search import *  # for search engines
 from sokoban import SokobanState, Direction, PROBLEMS  # for Sokoban specific classes and problems
 
