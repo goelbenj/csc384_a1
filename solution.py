@@ -6,12 +6,15 @@
 #   You may not remove any imports.
 #   You may not import or otherwise source any of your own files
 
+from audioop import mul
 from json.encoder import INFINITY
 import os  # for time functions
 import time
 import math  # for infinity
 from search import *  # for search engines
 from sokoban import SokobanState, Direction, PROBLEMS  # for Sokoban specific classes and problems
+
+global multiplier
 
 def sokoban_goal_state(state):
     '''
@@ -73,6 +76,17 @@ def edge_deadlock(state, box):
       return True
   return False
 
+def adjacency_deadlock(boxes, box):
+  if (box[0] - 1, box[1]) in boxes[1:]:
+    print(box)
+  if (box[0] + 1, box[1]) in boxes[1:]:
+    print(box)
+  if (box[0], box[1] - 1) in boxes[1:]:
+    print(box)
+  if (box[0], box[1] + 1) in boxes[1:]:
+    print(box)
+  return 1
+
 def heur_alternate(state):
     # IMPLEMENT
     '''a better heuristic'''
@@ -83,48 +97,84 @@ def heur_alternate(state):
     # Your function should return a numeric value for the estimate of the distance to the goal.
 
     # Heuristic description: exact same as manhattan distance from above, but now, only one box can occupy a single storage location.
-    storage_spaces = [space for space in state.storage]
-    sum = 0
-    for box in state.boxes:
-      if corner_deadlock(state, box): return math.inf
-      if edge_deadlock(state, box): return math.inf
-      man_dist = math.inf
-      man_space = (0,0)
-      for space in storage_spaces:
-        # if edge_deadlock(state, box, space): return math.inf
-        temp_dist = abs(box[0] - space[0]) + abs(box[1] - space[1])
-        if temp_dist < man_dist:
-          man_dist = temp_dist
-          man_space = space
-      index = storage_spaces.index(man_space)
-      storage_spaces.pop(index)
-      sum += man_dist
-    return sum  # CHANGE THIS
+    # storage_spaces = [space for space in state.storage]
+    # sum = 0
+    # for box in state.boxes:
+    #   box_copy = [tempbox for tempbox in state.boxes]
+    #   if adjacency_deadlock(box_copy.pop(box_copy.index(box)), box): 
+    #     sum += 1
+    #   if corner_deadlock(state, box): 
+    #     return math.inf
+    #   if edge_deadlock(state, box): 
+    #     return math.inf
+    #   man_dist = math.inf
+    #   man_space = (0,0)
+    #   for space in storage_spaces:
+    #     temp_dist = abs(box[0] - space[0]) + abs(box[1] - space[1])
+    #     if temp_dist < man_dist:
+    #       man_dist = temp_dist
+    #       man_space = space
+    #   index = storage_spaces.index(man_space)
+    #   storage_spaces.pop(index)
+    #   sum += man_dist
+    # return sum  # CHANGE THIS
 
     # base recursive case
-    # if not len(state.boxes): return 0
+    if not len(state.boxes): return 0
 
-    # storage_spaces = [space for space in state.storage]
-    # boxes = [box for box in state.boxes]
-    # box = boxes[0]
+    storages = list(state.storage)
+    boxes = list(state.boxes)
+    box = boxes[0]
 
-    # man_dist = math.inf
-    # man_space = None
-    # for storage in state.storage:
-    #   temp_dist = abs(box[0] - storage[0]) + abs(box[1] - storage[1])
-    #   if temp_dist < man_dist:
-    #     man_dist = temp_dist
-    #     man_space = storage
+    if box in state.storage:
+      new_storage = storages.copy()
+      new_storage.remove(box)
+      new_state = SokobanState(state.action, state.gval, state.parent, state.width,
+        state.height, state.robots, frozenset(boxes[1:]), frozenset(new_storage), state.obstacles)
+      return heur_alternate(new_state)
+    
+    walls = 0
+    if(box[0] + 1, box[1]) in state.obstacles:
+      walls += 2
+    if(box[0] - 1, box[1]) in state.obstacles:
+      walls += 2
+    if(box[0], box[1] + 1) in state.obstacles:
+      walls += 2
+    if(box[0], box[1] - 1) in state.obstacles:
+      walls += 2
+    if(box[0] == 0 or box[0] == state.width - 1):
+      walls += 2
+    if(box[1] == 0 or box[1] == state.height - 1):
+      walls += 2
+    if walls >= 2:
+      return math.inf
+    walls *= 2
 
-    # new_boxes = boxes.copy()
-    # new_storage = storage_spaces.copy()
-    # new_state = state
-    # new_boxes.remove(box)
-    # new_storage.remove(man_space)
-    # new_state.boxes = frozenset(new_boxes)
-    # new_state.storage = frozenset(new_storage)
+    adjacency = 0
+    if (box[0] + 1, box[1]) in boxes[1:]:
+      adjacency += 1
+    if (box[0] - 1, box[1]) in boxes[1:]:
+      adjacency += 1
+    if (box[0], box[1] + 1) in boxes[1:]:
+      adjacency += 1
+    if (box[0], box[1] - 1) in boxes[1:]:
+      adjacency += 1
+    
+    min = math.inf
+    storage_space = None
+    for storage in state.storage:
+      dist = abs(box[0] - storage[0]) + abs(box[1] - storage[1])
+      if dist < min:
+        min = dist
+        storage_space = storage
 
-    # return man_dist + heur_alternate(new_state)
+    new_storage = storages.copy()
+    new_storage.remove(storage_space)
+    new_state = SokobanState(state.action, state.gval, state.parent, state.width, state.height,
+      state.robots, frozenset(boxes[1:]), frozenset(new_storage), state.obstacles)
+
+    return min + walls + adjacency + heur_alternate(new_state)
+
 
 def heur_zero(state):
     '''Zero Heuristic can be used to make A* search perform uniform cost search'''
